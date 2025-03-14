@@ -1,10 +1,10 @@
 import 'dart:io';
+import 'dart:convert'; // UTF-8 처리를 위해 추가
 
 // 상품 클래스
 class Product {
   String name;
   int price;
-
   Product(this.name, this.price);
 }
 
@@ -17,57 +17,60 @@ class ShoppingMall {
     Product('반바지', 38000),
     Product('양말', 5000)
   ];
+
   Map<String, int> cart = {};
   int total = 0;
 
   // 상품 목록 출력
   void showProducts() {
     print("\n판매 상품 목록:");
-    for (var product in products) {
-      print("${product.name} / ${product.price}원");
+    for (int i = 0; i < products.length; i++) {
+      print("${i + 1}. ${products[i].name} / ${products[i].price}원");
     }
   }
 
-  // 장바구니에 상품 추가
+  // 장바구니에 상품 추가 - 번호로 선택하는 방식으로 변경
   void addToCart() {
-    print("\n장바구니에 담을 상품의 이름을 입력하세요:");
-    String? productName = stdin.readLineSync()?.trim();
+    showProducts(); // 상품 목록 먼저 보여주기
 
-    if (productName == null || productName.isEmpty) {
-      print("입력값이 올바르지 않아요 !");
-      return;
-    }
-
-    var product = products.firstWhere(
-      (p) => p.name == productName,
-      orElse: () => Product('', 0),
-    );
-
-    if (product.name.isEmpty) {
-      print("입력값이 올바르지 않아요 !");
-      return;
-    }
-
-    print("상품 개수를 입력하세요:");
-    String? quantityInput = stdin.readLineSync();
-    if (quantityInput == null || quantityInput.isEmpty) {
-      print("입력값이 올바르지 않아요 !");
+    print("\n장바구니에 담을 상품의 번호를 입력하세요 (1-5):");
+    String? input = stdin.readLineSync();
+    if (input == null || input.isEmpty) {
+      print("입력값이 올바르지 않아요!");
       return;
     }
 
     try {
-      int quantity = int.parse(quantityInput);
-      if (quantity <= 0) {
-        print("0개보다 많은 개수의 상품만 담을 수 있어요 !");
+      int productIndex = int.parse(input) - 1;
+
+      if (productIndex < 0 || productIndex >= products.length) {
+        print("유효한 상품 번호를 입력해주세요 (1-5)");
         return;
       }
-      cart.update(
-          product.name, (existingQuantity) => existingQuantity + quantity,
+
+      Product selectedProduct = products[productIndex];
+      print("선택한 상품: ${selectedProduct.name}");
+
+      print("상품 개수를 입력하세요:");
+      String? quantityInput = stdin.readLineSync();
+      if (quantityInput == null || quantityInput.isEmpty) {
+        print("입력값이 올바르지 않아요!");
+        return;
+      }
+
+      int quantity = int.parse(quantityInput);
+      if (quantity <= 0) {
+        print("0개보다 많은 개수의 상품만 담을 수 있어요!");
+        return;
+      }
+
+      cart.update(selectedProduct.name,
+          (existingQuantity) => existingQuantity + quantity,
           ifAbsent: () => quantity);
-      total += product.price * quantity;
-      print("장바구니에 상품이 담겼어요 !");
+      total += selectedProduct.price * quantity;
+      print("장바구니에 ${selectedProduct.name} ${quantity}개가 담겼어요!");
     } catch (e) {
-      print("입력값이 올바르지 않아요 !");
+      print("입력값이 올바르지 않아요! 숫자만 입력해주세요.");
     }
   }
 
@@ -76,7 +79,7 @@ class ShoppingMall {
     if (cart.isEmpty) {
       print("장바구니에 담긴 상품이 없습니다.");
     } else {
-      print("장바구니에 ${total}원 어치를 담으셨네요 !");
+      print("장바구니에 ${total}원 어치를 담으셨네요!");
     }
   }
 
@@ -86,9 +89,12 @@ class ShoppingMall {
       print("장바구니에 담긴 상품이 없습니다.");
       return;
     }
+
     print("장바구니에 다음 상품이 담겨있습니다:");
     cart.forEach((name, quantity) {
-      print("$name x $quantity");
+      // 해당 상품의 가격 찾기
+      var product = products.firstWhere((p) => p.name == name);
+      print("$name x $quantity = ${product.price * quantity}원");
     });
     print("총 ${total}원 입니다!");
   }
@@ -109,7 +115,7 @@ class ShoppingMall {
     print("정말 종료하시겠습니까? (5 입력 시 종료)");
     String? input = stdin.readLineSync();
     if (input == '5') {
-      print("이용해 주셔서 감사합니다 ~ 안녕히 가세요 !");
+      print("이용해 주셔서 감사합니다 ~ 안녕히 가세요!");
       exit(0);
     } else {
       print("종료하지 않습니다.");
@@ -118,7 +124,12 @@ class ShoppingMall {
 }
 
 void main() {
+  // 한글 출력을 위한 인코딩 설정
+  stdout.encoding = utf8;
+  stdin.encoding = utf8;
+
   ShoppingMall mall = ShoppingMall();
+
   while (true) {
     print(
         "\n[1] 상품 목록 보기 / [2] 장바구니에 담기 / [3] 장바구니 목록 및 총 가격 보기 / [4] 프로그램 종료 / [6] 장바구니 초기화");
@@ -141,7 +152,7 @@ void main() {
         mall.clearCart();
         break;
       default:
-        print("지원하지 않는 기능입니다 ! 다시 시도해 주세요 ..");
+        print("지원하지 않는 기능입니다! 다시 시도해 주세요..");
     }
   }
 }
